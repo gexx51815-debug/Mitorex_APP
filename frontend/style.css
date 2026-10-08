@@ -1,0 +1,29 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 40px;
+}
+
+p {
+    font-size: 18px;
+    color: #96dafa;
+    line-height: 1.6;
+}
+
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+p1 {
+    font-size: 20px;
+    color: #f70000;
+    line-height: 1.6;
+}
