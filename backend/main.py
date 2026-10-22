@@ -14,4 +14,4 @@ app.add_middleware(
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "Conexio amb el backend feta per segon cop"}
+    return {"mensaje": "Conexio amb el backend feta per tercer cop"}
