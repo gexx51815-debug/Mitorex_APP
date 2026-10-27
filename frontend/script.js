@@ -1,32 +1,39 @@
-const boton1 = document.getElementById("boton1");
-const resultado1 = document.getElementById("resultado1");
 
-boton1.addEventListener("click", async () => {
-    resultado1.textContent = "Conectando con el backend...";
+const estado = document.getElementById("estado");
+const resultado = document.getElementById("resultado");
 
-    try {
-        const respuesta1 = await fetch("http://localhost:9000/");
-        const datos1 = await respuesta1.json();
-
-        resultado1.textContent = datos1.mensaje;
-    } catch (error) {
-        resultado1.textContent = "No se pudo conectar con el backend.";
-        console.error(error);
-    }
-});
-
-const boton2 = document.getElementById("boton2");
-const resultado2 = document.getElementById("resultado2");
-
-boton2.addEventListener("click", async () => {
-    resultado2.textContent = "Conectando con el backend...";
+async function cargarProductos() {
+    estado.textContent = "Conectando con el backend...";
+    resultado.replaceChildren();
 
     try {
-        const respuesta2 = await fetch("http://localhost:9000/");
-        const datos2 = await respuesta2.json();
-        resultado2.textContent = datos2.mensaje;
+        const respuesta = await fetch("http://localhost:9000/productos");
+
+        if (!respuesta.ok) {
+            throw new Error("Error HTTP: " + respuesta.status);
+        }
+
+        const productos = await respuesta.json();
+
+        estado.textContent = "Productos encontrados: " + productos.length;
+
+        productos.forEach((producto) => {
+            const tarjeta = document.createElement("div");
+            const nombre = document.createElement("h3");
+            const precio = document.createElement("p");
+            const cantidad = document.createElement("p");
+
+            nombre.textContent = producto.nombre;
+            precio.textContent = "Precio: " + producto.precio.toFixed(2) + " €";
+            cantidad.textContent = "Cantidad: " + producto.cantidad;
+
+            tarjeta.append(nombre, precio, cantidad);
+            resultado.appendChild(tarjeta);
+        });
     } catch (error) {
-        resultado2.textContent = "No se pudo conectar con el backend.";
+        estado.textContent = "No se pudieron cargar los productos.";
         console.error(error);
     }
-});
+}
+
+cargarProductos();
