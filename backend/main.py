@@ -1,9 +1,10 @@
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-app = FastAPI(title="Mitorex APP")
+app = FastAPI(title="Mitorex APP - API de negocios")
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,72 +14,108 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class NegocioEntrada(BaseModel):
+    nombre: str = Field(min_length=2, max_length=100)
+    categoria: str
+    ubicacion: str
+    descripcion: str
+    telefono: str = ""
+    correo: str = ""
+    web: str = ""
 
-class Producto(BaseModel):
-    nombre: str
-    precio: float
-    cantidad: int
+    
+EstadoNegocio = Literal["pendiente", "aprobado", "rechazado"]
 
 
-productos = [
+negocios = [
     {
         "id": 1,
-        "nombre": "Mitroex gratuit",
-        "precio": 85.99,
-        "cantidad": 100,
+        "nombre": "Perruqueria Maria",
+        "categoria": "Perruquería",
+        "ubicacion": "Terrassa",
+        "descripcion": "Servicios de peluquería para todos los públicos.",
+        "telefono": "",
+        "correo": "",
+        "web": "",
+        "estado": "aprobado",
     }
 ]
 
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "¡Mitorex APP funciona!"}
+    return {
+        "mensaje": "Mitorex APP funciona",
+        "seccion": "Perfiles de negocios",
+    }
 
 
-@app.get("/productos")
-def listar_productos():
-    return productos
+@app.get("/negocios")
+def listar_negocios():
+    return [
+        negocio
+        for negocio in negocios
+        if negocio["estado"] == "aprobado"
+    ]
 
 
-@app.post("/productos")
-def crear_producto(producto: Producto):
+@app.post("/negocios")
+def crear_negocio(negocio: NegocioEntrada):
     nuevo_id = max(
-        (p["id"] for p in productos),
+        (n["id"] for n in negocios),
         default=0,
     ) + 1
 
-    nuevo_producto = {
+    nuevo_negocio = {
         "id": nuevo_id,
-        **producto.model_dump(),
+        **negocio.model_dump(),
+        "estado": "pendiente",
     }
 
-    productos.append(nuevo_producto)
-    return nuevo_producto
+    negocios.append(nuevo_negocio)
+    return nuevo_negocio
 
 
-@app.put("/productos/{producto_id}")
-def editar_producto(producto_id: int, producto: Producto):
-    for i, existente in enumerate(productos):
-        if existente["id"] == producto_id:
-            productos[i] = {
-                "id": producto_id,
-                **producto.model_dump(),
-            }
-            return productos[i]
+@app.get("/admin/negocios")
+def listar_todos_los_negocios():
+    return negocios
+
+
+@app.patch("/admin/negocios/{negocio_id}/estado")
+def cambiar_estado(
+    negocio_id: int,
+    estado: EstadoNegocio,
+):
+    for negocio in negocios:
+        if negocio["id"] == negocio_id:
+            negocio["estado"] = estado
+            return negocio
 
     raise HTTPException(
         status_code=404,
-        detail="Producto no encontrado",
+        detail="Negocio no encontrado",
     )
 
 
-@app.delete("/productos/{producto_id}")
-def eliminar_producto(producto_id: int):
-    for i, producto in enumerate(productos):
-        if producto["id"] == producto_id:
-            return productos.pop(i)
+@app.put("/admin/negocios/{negocio_id}")
+def editar_negocio(
+    negocio_id: int,
+    datos: NegocioEntrada,
+):
+
+    for i, negocio in enumerate(negocios):
+
+        if negocio["id"] == negocio_id:
+
+            negocios[i] = {
+                "id": negocio_id,
+                **datos.model_dump(),
+                "estado": negocio["estado"],
+            }
+
+            return negocios[i]
 
     raise HTTPException(
         status_code=404,
-        detail="Producto no encontrado",
+        detail="Negocio no encontrado",
     )

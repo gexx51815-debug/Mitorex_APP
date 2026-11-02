@@ -2,38 +2,74 @@
 const estado = document.getElementById("estado");
 const resultado = document.getElementById("resultado");
 
-async function cargarProductos() {
-    estado.textContent = "Conectando con el backend...";
+async function cargarNegocios() {
+
+    estado.textContent = "Cargando negocios...";
     resultado.replaceChildren();
 
     try {
-        const respuesta = await fetch("http://localhost:9000/productos");
+
+        const respuesta = await fetch(
+            "http://localhost:9000/negocios"
+        );
 
         if (!respuesta.ok) {
             throw new Error("Error HTTP: " + respuesta.status);
         }
 
-        const productos = await respuesta.json();
+        const negocios = await respuesta.json();
 
-        estado.textContent = "Productos encontrados: " + productos.length;
+        estado.textContent =
+            "Negocios encontrados: " + negocios.length;
 
-        productos.forEach((producto) => {
-            const tarjeta = document.createElement("div");
-            const nombre = document.createElement("h3");
-            const precio = document.createElement("p");
-            const cantidad = document.createElement("p");
+        negocios.forEach((negocio) => {
 
-            nombre.textContent = producto.nombre;
-            precio.textContent = "Precio: " + producto.precio.toFixed(2) + " €";
-            cantidad.textContent = "Cantidad: " + producto.cantidad;
+            const tarjeta = document.createElement("article");
+            tarjeta.className = "tarjeta-negocio";
 
-            tarjeta.append(nombre, precio, cantidad);
+            const botonNombre = document.createElement("button");
+            botonNombre.textContent = negocio.nombre;
+            botonNombre.className = "boton-negocio";
+
+            botonNombre.addEventListener("click", () => {
+                alert("Has seleccionado: " + negocio.nombre);
+            });
+
+            const categoria = document.createElement("p");
+            categoria.textContent = "Categoría: " + negocio.categoria;
+
+            const ubicacion = document.createElement("p");
+            ubicacion.textContent = "Ubicación: " + negocio.ubicacion;
+
+            const descripcion = document.createElement("p");
+            descripcion.textContent = negocio.descripcion;
+
+            const contacto = document.createElement("p");
+            contacto.className = "contacto";
+
+            contacto.textContent =
+                "Teléfono: " + (negocio.telefono || "No disponible") +
+                " | Correo: " + (negocio.correo || "No disponible");
+
+            tarjeta.append(
+                botonNombre,
+                categoria,
+                ubicacion,
+                descripcion,
+                contacto
+            );
+
             resultado.appendChild(tarjeta);
+
         });
+
     } catch (error) {
-        estado.textContent = "No se pudieron cargar los productos.";
+
+        estado.textContent = "No se pudieron cargar los negocios.";
+
         console.error(error);
+
     }
 }
 
-cargarProductos();
+cargarNegocios();
