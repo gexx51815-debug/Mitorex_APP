@@ -1,10 +1,15 @@
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends  # <-- 1. Añadimos ", Depends" aquí
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session  # <-- 2. Añadimos esta línea
+
+from database import engine, Base, get_db, DBNegocio
 
 app = FastAPI(title="Mitorex APP - API de negocios")
+
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,20 +56,17 @@ def inicio():
 
 
 @app.get("/negocios")
-def listar_negocios():
-    return [
-        negocio
-        for negocio in negocios
-        if negocio["estado"] == "aprobado"
-    ]
+def listar_negocios(db: Session = Depends(get_db)):
+    return db.query(DBNegocio).filter(DBNegocio.estado == "aprobado").all()
 
 
 @app.post("/negocios")
-def crear_negocio(negocio: NegocioEntrada):
-    nuevo_id = max(
-        (n["id"] for n in negocios),
-        default=0,
-    ) + 1
+def crear_negocio(negocio: NegocioEntrada, db: Session = Depends(get_db)):
+    nuevo_negocio = DBNegocio(**negocio.model_dump())
+    db.add(nuevo_negocio)
+    db.commit()
+    db.refresh(nuevo_negocio)
+    return nuevo_negocio
 
     nuevo_negocio = {
         "id": nuevo_id,
