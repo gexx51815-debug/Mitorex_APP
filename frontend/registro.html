@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registrar el meu negoci a Mitorex APP</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Registrar el meu negoci</h1>
+    <a href="index.html" class="btn-volver">← Volver al directorio</a>
+  </header>
+
+  <div id="mensaje" class="alerta"></div>
+
+  <form id="form-registro">
+    <label>
+      Nombre de la empresa *
+      <input type="text" id="nombre" required minlength="2" maxlength="100" placeholder="Ej. Taller Mecánico Vallès" />
+    </label>
+
+    <label>
+      Categoría *
+      <select id="categoria" required>
+        <option value="">Selecciona una categoria...</option>
+        <option value="Hostaleria">Hostaleria</option>
+        <option value="Restaurant">Restaurant</option>
+        <option value="Pastisseria">Pastisseria</option>
+        <option value="Comerç">Comerç i Botigues</option>
+        <option value="Serveis">Serveis Professionals</option>
+        <option value="Tecnologia">Tecnologia i Informàtica</option>
+        <option value="Salut i Bellesa">Salut, Estètica i Benestar</option>
+        <option value="Reformes i Llar">Reformes, Construcció i Llar</option>
+        <option value="Automoció">Automoció i Tallers</option>
+        <option value="Educació i Formació">Educació i Formació</option>
+        <option value="Esport i Oci">Esport i Oci</option>
+        <option value="Assessoria i Legal">Assessoria, Gestoria i Legal</option>
+        <option value="Transport i Logística">Transport i Logística</option>
+        <option value="Altres">Altres serveis</option>
+      </select>
+    </label>
+
+    <label>
+      Ubicación (Ciudad / Barrio) *
+      <input type="text" id="ubicacion" required placeholder="Ej. Terrassa, Centro" />
+    </label>
+
+    <label>
+      Descripción de servicios *
+      <textarea id="descripcion" rows="3" required placeholder="Explica brevemente qué ofrece tu empresa..."></textarea>
+    </label>
+
+    <label>
+      Teléfono de contacto
+      <input type="text" id="telefono" placeholder="Ej. 600 123 456" />
+    </label>
+
+    <label>
+      Correo electrónico
+      <input type="email" id="correo" placeholder="Ej. contacto@empresa.com" />
+    </label>
+
+    <label>
+      Página web
+      <input type="text" id="web" placeholder="Ej. https://www.empresa.com" />
+    </label>
+
+    <button type="submit">Enviar solicitud de alta</button>
+  </form>
+
+  <script>
+    const API_URL = "http://localhost:9000";
+
+    document.getElementById("form-registro").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cajaMensaje = document.getElementById("mensaje");
+
+      const datos = {
+        nombre: document.getElementById("nombre").value.trim(),
+        categoria: document.getElementById("categoria").value,
+        ubicacion: document.getElementById("ubicacion").value.trim(),
+        descripcion: document.getElementById("descripcion").value.trim(),
+        telefono: document.getElementById("telefono").value.trim(),
+        correo: document.getElementById("correo").value.trim(),
+        web: document.getElementById("web").value.trim(),
+      };
+
+      try {
+        const respuesta = await fetch(`${API_URL}/negocios`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos),
+        });
+
+        if (!respuesta.ok) throw new Error("No se pudo registrar el negocio");
+
+        const creado = await respuesta.json();
+        cajaMensaje.textContent = `¡Solicitud enviada! "${creado.nombre}" se ha guardado con ID #${creado.id} y está pendiente de aprobación.`;
+        cajaMensaje.className = "alerta exito";
+        cajaMensaje.style.display = "block";
+        e.target.reset();
+      } catch (error) {
+        console.error(error);
+        cajaMensaje.textContent = "Error al conectar con el servidor. Revisa que el backend esté activo.";
+        cajaMensaje.className = "alerta error";
+        cajaMensaje.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>

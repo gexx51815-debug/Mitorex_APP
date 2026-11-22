@@ -1,0 +1,48 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: mi-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ClaveRoot123!
+      MARIADB_DATABASE: mitorex
+      MARIADB_USER: mitorex_user
+      MARIADB_PASSWORD: ClaveApp123!
+    volumes:
+      - mitorex-datos:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    image: mi-aplicacion
+    container_name: mi-backend
+    restart: unless-stopped
+    ports:
+      - "9000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      DB_USER: mitorex_user
+      DB_PASSWORD: ClaveApp123!
+      DB_HOST: db
+      DB_NAME: mitorex
+    depends_on:
+      db:
+        condition: service_healthy
+
+  adminer:
+    image: adminer
+    container_name: mi-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  mitorex-datos:
+    external: true

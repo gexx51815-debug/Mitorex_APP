@@ -1,15 +1,13 @@
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Depends  # <-- 1. Añadimos ", Depends" aquí
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session  # <-- 2. Añadimos esta línea
+from sqlalchemy.orm import Session
 
 from database import engine, Base, get_db, DBNegocio
 
 app = FastAPI(title="Mitorex APP - API de negocios")
-
-Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +16,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+Base.metadata.create_all(bind=engine)
+
 
 class NegocioEntrada(BaseModel):
     nombre: str = Field(min_length=2, max_length=100)
@@ -28,23 +29,8 @@ class NegocioEntrada(BaseModel):
     correo: str = ""
     web: str = ""
 
-    
+
 EstadoNegocio = Literal["pendiente", "aprobado", "rechazado"]
-
-
-negocios = [
-    {
-        "id": 1,
-        "nombre": "Perruqueria Maria",
-        "categoria": "Perruquería",
-        "ubicacion": "Terrassa",
-        "descripcion": "Servicios de peluquería para todos los públicos.",
-        "telefono": "",
-        "correo": "",
-        "web": "",
-        "estado": "aprobado",
-    }
-]
 
 
 @app.get("/")
@@ -68,56 +54,44 @@ def crear_negocio(negocio: NegocioEntrada, db: Session = Depends(get_db)):
     db.refresh(nuevo_negocio)
     return nuevo_negocio
 
-    nuevo_negocio = {
-        "id": nuevo_id,
-        **negocio.model_dump(),
-        "estado": "pendiente",
-    }
-
-    negocios.append(nuevo_negocio)
-    return nuevo_negocio
-
 
 @app.get("/admin/negocios")
-def listar_todos_los_negocios():
-    return negocios
+def listar_todos_los_negocios(db: Session = Depends(get_db)):
+    return db.query(DBNegocio).all()
 
 
 @app.patch("/admin/negocios/{negocio_id}/estado")
 def cambiar_estado(
     negocio_id: int,
     estado: EstadoNegocio,
+    db: Session = Depends(get_db),
 ):
-    for negocio in negocios:
-        if negocio["id"] == negocio_id:
-            negocio["estado"] = estado
-            return negocio
-
-    raise HTTPException(
-        status_code=404,
-        detail="Negocio no encontrado",
-    )
+    negocio = db.query(DBNegocio).filter(DBNegocio.id == negocio_id).first()
+    if not negocio:
+        raise HTTPException(
+            status_code=404,
+            detail="Negocio no encontrado",
+        )
+    negocio.estado = estado
+    db.commit()
+    db.refresh(negocio)
+    return negocio
 
 
 @app.put("/admin/negocios/{negocio_id}")
 def editar_negocio(
     negocio_id: int,
     datos: NegocioEntrada,
+    db: Session = Depends(get_db),
 ):
-
-    for i, negocio in enumerate(negocios):
-
-        if negocio["id"] == negocio_id:
-
-            negocios[i] = {
-                "id": negocio_id,
-                **datos.model_dump(),
-                "estado": negocio["estado"],
-            }
-
-            return negocios[i]
-
-    raise HTTPException(
-        status_code=404,
-        detail="Negocio no encontrado",
-    )
+    negocio = db.query(DBNegocio).filter(DBNegocio.id == negocio_id).first()
+    if not negocio:
+        raise HTTPException(
+            status_code=404,
+            detail="Negocio no encontrado",
+        )
+    for campo, valor in datos.model_dump().items():
+        setattr(negocio, campo, valor)
+    db.commit()
+    db.refresh(negocio)
+    return negocio

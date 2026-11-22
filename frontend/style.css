@@ -1,67 +1,489 @@
-
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #e2e4ec;
-    color: #222;
+/* Título de cada tarjeta con tu estilo original de franja azul marino */
+.card h2 {
+  background-color: #183153;
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.15rem;
+  margin: 10px 0 12px 0;
 }
 
+/* Botón del header en azul más intenso sobre la cabecera #27C5FF */
+header .btn-primario {
+  background-color: #0284c7;
+}
+
+header .btn-primario:hover {
+  background-color: #183153;
+}
+
+/* Estilos generales */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #e2e4ec;
+  color: #222;
+}
+
+/* Cabecera superior con tu color corporativo */
 header {
-    background-color: #27C5FF;
-    color: white;
-    padding: 30px;
-    text-align: center;
+  background-color: #27C5FF;
+  color: white;
+  padding: 25px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.9rem;
+}
+
+header p {
+  margin: 4px 0 0 0;
+  opacity: 0.95;
 }
 
 main {
-    max-width: 1000px;
-    margin: 30px auto;
-    padding: 20px;
+  max-width: 1050px;
+  margin: 30px auto;
+  padding: 0 20px 40px 20px;
 }
 
-.contenedor-negocios {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+.contenedor-estrecho main {
+  max-width: 650px;
 }
 
-.tarjeta-negocio {
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px #000000fa;
+/* Navegación y botones */
+.nav-acciones {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.tarjeta-negocio h3 {
-    margin-top: 0;
-    color: #183153;
-    text-align: center;
+.btn-primario, .boton-negocio {
+  background-color: #183153;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  transition: background-color 0.2s;
 }
 
-.tarjeta-negocio p {
-    line-height: 1.5;
+.btn-primario:hover, .boton-negocio:hover {
+  background-color: #2874c7;
 }
 
-.contacto {
-    color: #526477;
-    font-size: 14px;
+.btn-secundario, .btn-volver {
+  background-color: white;
+  color: #183153;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+  transition: background-color 0.2s;
 }
 
-.boton-negocio {
-    display: block;
-    width: 100%;
-    background-color: #27C5FF;
-    color: white;
-    border:none;
-    border-color: #222;
-    padding: 15px;
-    border-radius: 8px;
-    font-size: 20px;
-    font-weight: bold;
-    cursor: pointer;
-    text-align: center;
+.btn-secundario:hover, .btn-volver:hover {
+  background-color: #f1f5f9;
 }
 
-.boton-negocio:hover {
-    background-color: #2874c7;
+/* Rejilla y tarjetas de negocios (index.html) */
+.grid, .contenedor-negocios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card, .tarjeta-negocio {
+  background-color: #ffffff;
+  padding: 22px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px #5591ff1f;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card h2, .tarjeta-negocio h3 {
+  background-color: #7777fd;
+  margin: 12px 0 8px 0;
+  color: #ffffff;
+}
+
+.card p, .tarjeta-negocio p {
+  color: #000000;
+  line-height: 1.5;
+  margin: 6px 0;
+}
+
+.badge {
+  align-self: flex-start;
+  background-color: #e0f7ff;
+  color: #0284c7;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.ubicacion, .contacto {
+  color: #526477;
+  font-size: 14px;
+}
+
+/* Formulario de registro (registro.html) */
+form {
+  background-color: #ffffff;
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+label {
+  font-weight: bold;
+  font-size: 14px;
+  color: #173661;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+input, select, textarea {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 15px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #27C5FF;
+  box-shadow: 0 0 0 3px rgba(39, 197, 255, 0.25);
+}
+
+form button[type="submit"] {
+  background-color: #27C5FF;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+form button[type="submit"]:hover {
+  background-color: #2874c7;
+}
+
+/* Alertas */
+.alerta {
+  padding: 14px;
+  border-radius: 8px;
+  display: none;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.exito {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Tabla del Panel de Administración (admin.html) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+th, td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+th {
+  background-color: #183153;
+  color: white;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.estado {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.pendiente { background-color: #fef3c7; color: #b45309; }
+.aprobado { background-color: #dcfce7; color: #15803d; }
+.rechazado { background-color: #fee2e2; color: #b91c1c; }
+
+.acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-aprobar, .btn-rechazar {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 13px;
+  color: white;
+}
+
+.btn-aprobar { background-color: #16a34a; }
+.btn-aprobar:hover { background-color: #15803d; }
+.btn-rechazar { background-color: #dc2626; }
+.btn-rechazar:hover { background-color: #b91c1c; }
+
+/* Barra de búsqueda y filtros */
+.barra-filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.barra-filtros input {
+  flex: 2;
+  min-width: 220px;
+}
+
+.barra-filtros select {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* Botón dentro de cada tarjeta----------------------------------------------------------------------------------------- */
+.card .boton-negocio {
+  margin-top: 16px;
+  padding: 10px 14px;
+  font-size: 14px;
+  background-color: #27C5FF;
+}
+
+.card .boton-negocio:hover {
+  background-color: #2874c7;
+}
+
+/* Ventana modal ampliada con carrusel----------------------------------------------------------------------------------------- */
+.modal-fondo {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 49, 83, 0.72);
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal-fondo.activo {
+  display: flex;
+}
+
+.modal-contenido {
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 16px;
+  max-height: 500px;
+  height: 100%;
+  max-width: 1000px;
+  width: 100%;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.modal-info {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.modal-info .badge {
+  align-self: flex-start;
+}
+
+.modal-info h2 {
+  color: #183153;
+  font-size: 1.7rem;
+  margin: 10px 0 6px 0;
+}
+
+.modal-cerrar {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  font-weight: bold;
+  color: #526477;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.modal-cerrar:hover {
+  color: #183153;
+}
+
+.modal-descripcion-box {
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin: 10px 0 18px 0;
+  line-height: 1.5;
+  color: #334155;
+  scrollbar-width: thin;
+}
+
+.modal-descripcion-box p {
+  margin: 0;
+}
+
+.datos-contacto {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.datos-contacto a {
+  color: #0284c7;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* Carrusel de fotos (columna derecha) */
+.carrusel {
+  position: relative;
+  top: 15%;
+  width: 100%;
+  height: 100%;
+  min-height: 340px;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #183153;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.carrusel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.carrusel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(24, 49, 83, 0.75);
+  color: white;
+  border: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.carrusel-btn:hover {
+  background: #27C5FF;
+}
+
+.carrusel-btn.prev { left: 12px; }
+.carrusel-btn.next { right: 12px; }
+
+.carrusel-indicadores {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.carrusel-punto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+
+.carrusel-punto.activo {
+  background: #27C5FF;
+  transform: scale(1.2);
+}
+
+@media (max-width: 768px) {
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+  .carrusel {
+    min-height: 230px;
+  }
 }

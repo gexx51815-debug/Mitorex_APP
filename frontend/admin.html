@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Admin - Mitorex APP</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Panel de Administración</h1>
+      <p>Gestiona y valida las solicitudes de PYMEs</p>
+    </div>
+    <a href="index.html" class="btn-volver">← Ver escaparate público</a>
+  </header>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Empresa</th>
+        <th>Categoría</th>
+        <th>Ubicación</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-negocios">
+      <tr><td colspan="6">Cargando solicitudes...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    const API_URL = "http://localhost:9000";
+
+    async function cargarTodos() {
+      const tbody = document.getElementById("tabla-negocios");
+      try {
+        const res = await fetch(`${API_URL}/admin/negocios`);
+        const negocios = await res.json();
+
+        if (negocios.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6">No hay negocios registrados todavía.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = negocios.map(n => `
+          <tr>
+            <td>#${n.id}</td>
+            <td>
+              <strong>${n.nombre}</strong><br>
+              <small style="color:#64748b">${n.correo || "Sin correo"} · ${n.telefono || "Sin teléfono"}</small>
+            </td>
+            <td>${n.categoria}</td>
+            <td>${n.ubicacion}</td>
+            <td><span class="estado ${n.estado}">${n.estado}</span></td>
+            <td class="acciones">
+              <button class="btn-aprobar" onclick="cambiarEstado(${n.id}, 'aprobado')">Aprobar</button>
+              <button class="btn-rechazar" onclick="cambiarEstado(${n.id}, 'rechazado')">Rechazar</button>
+            </td>
+          </tr>
+        `).join("");
+      } catch (error) {
+        console.error(error);
+        tbody.innerHTML = '<tr><td colspan="6">Error al conectar con el backend.</td></tr>';
+      }
+    }
+
+    async function cambiarEstado(id, nuevoEstado) {
+      try {
+        const res = await fetch(`${API_URL}/admin/negocios/${id}/estado?estado=${nuevoEstado}`, {
+          method: "PATCH"
+        });
+        if (!res.ok) throw new Error("Error al actualizar estado");
+        cargarTodos();
+      } catch (error) {
+        alert("No se pudo cambiar el estado.");
+        console.error(error);
+      }
+    }
+
+    cargarTodos();
+  </script>
+</body>
+</html>

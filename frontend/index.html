@@ -1,27 +1,221 @@
-
 <!DOCTYPE html>
-<html lang="es">
+<html lang="ca">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mitorex APP - Negocios</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitorex APP - Directori de PIMEs</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <header>
+    <div>
+      <h1>Mitorex</h1>
+      <p>Connecta amb petites i mitjanes empreses verificades</p>
+    </div>
+    <div class="nav-acciones">
+      <a href="admin.html" class="btn-secundario">Panell Admin</a>
+      <a href="registro.html" class="btn-primario">+ Registrar el meu negoci</a>
+    </div>
+  </header>
 
-    <header>
-        <h1>Mitorex APP</h1>
-        <p>Descubre negocios y servicios cerca de ti.</p>
-    </header>
+  <main>
+    <section class="barra-filtros">
+      <input
+        type="text"
+        id="buscador"
+        placeholder="Cercar per nom, servei o ciutat..."
+        oninput="filtrarNegocios()"
+      />
+      <select id="filtro-categoria" onchange="filtrarNegocios()">
+        <option value="">Totes les categories</option>
+      </select>
+    </section>
 
-    <main>
-        <h2 style="text-align: center;">Explora nuestros negocios</h2>
+    <div id="lista-negocios" class="grid">Carregant empreses...</div>
+  </main>
 
-        <p id="estado">Cargando negocios...</p>
+  <!-- Modal ampliat amb informació a l'esquerra i carrusel a la dreta -->
+  <div id="modal-contacto" class="modal-fondo" onclick="cerrarModalSiFuera(event)">
+    <div class="modal-contenido">
+      <button class="modal-cerrar" onclick="cerrarModal()">&times;</button>
 
-        <section id="resultado" class="contenedor-negocios"> </section>
-    </main>
+      <div class="modal-grid">
+        <div class="modal-info">
+          <span id="modal-categoria" class="badge"></span>
+          <h2 id="modal-nombre"></h2>
+          <p id="modal-ubicacion" class="ubicacion"></p>
 
-    <script src="script.js"></script>
+          <div class="modal-descripcion-box">
+            <p id="modal-descripcion"></p>
+          </div>
+
+          <div class="datos-contacto">
+            <div><strong>📞 Telèfon:</strong> <span id="modal-telefono"></span></div>
+            <div><strong>✉️ Correu:</strong> <span id="modal-correo"></span></div>
+            <div><strong>🌐 Web:</strong> <span id="modal-web"></span></div>
+          </div>
+        </div>
+
+        <div class="carrusel">
+          <img id="carrusel-imagen" src="" alt="Fotografia del negoci" />
+          <button class="carrusel-btn prev" onclick="cambiarFoto(-1)">&#10094;</button>
+          <button class="carrusel-btn next" onclick="cambiarFoto(1)">&#10095;</button>
+          <div id="carrusel-indicadores" class="carrusel-indicadores"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:9000";
+    let todosLosNegocios = [];
+    let fotosActuales = [];
+    let indiceFoto = 0;
+
+    // Fotos d'exemple per categoria mentre no hi hagi taula d'imatges a la BD
+    const FOTOS_POR_DEFECTO = {
+      Pastisseria: [
+        "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=80",
+        "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=800&q=80",
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80"
+      ],
+      Restaurant: [
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
+        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80"
+      ],
+      Hostaleria: [
+        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&q=80",
+        "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80",
+        "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&q=80"
+      ],
+      default: [
+        "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+        "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&q=80",
+        "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80"
+      ]
+    };
+
+    async function cargarNegocios() {
+      const contenedor = document.getElementById("lista-negocios");
+      try {
+        const respuesta = await fetch(`${API_URL}/negocios`);
+        if (!respuesta.ok) throw new Error("Error al connectar amb l'API");
+
+        todosLosNegocios = await respuesta.json();
+        actualizarDesplegableCategorias(todosLosNegocios);
+        pintarTarjetas(todosLosNegocios);
+      } catch (error) {
+        console.error(error);
+        contenedor.innerHTML = "<p>No s'ha pogut connectar amb el servidor backend.</p>";
+      }
+    }
+
+    function actualizarDesplegableCategorias(negocios) {
+      const select = document.getElementById("filtro-categoria");
+      const categoriasUnicas = [...new Set(negocios.map(n => n.categoria))].sort();
+
+      select.innerHTML = '<option value="">Totes les categories</option>' +
+        categoriasUnicas.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+    }
+
+    function pintarTarjetas(lista) {
+      const contenedor = document.getElementById("lista-negocios");
+
+      if (lista.length === 0) {
+        contenedor.innerHTML = "<p>No s'han trobat empreses amb aquests filtres.</p>";
+        return;
+      }
+
+      contenedor.innerHTML = lista.map(negocio => `
+        <article class="card">
+          <div>
+            <span class="badge">${negocio.categoria}</span>
+            <h2>${negocio.nombre}</h2>
+            <p class="ubicacion">📍 ${negocio.ubicacion}</p>
+            <p>📞 ${negocio.telefono || "No facilitat"}</p>
+          </div>
+          <button class="boton-negocio" onclick="abrirModal(${negocio.id})">Veure contacte</button>
+        </article>
+      `).join("");
+    }
+
+    function filtrarNegocios() {
+      const texto = document.getElementById("buscador").value.toLowerCase().trim();
+      const categoria = document.getElementById("filtro-categoria").value;
+
+      const filtrados = todosLosNegocios.filter(n => {
+        const coincideTexto =
+          n.nombre.toLowerCase().includes(texto) ||
+          n.ubicacion.toLowerCase().includes(texto) ||
+          n.descripcion.toLowerCase().includes(texto);
+
+        const coincideCategoria = categoria === "" || n.categoria === categoria;
+        return coincideTexto && coincideCategoria;
+      });
+
+      pintarTarjetas(filtrados);
+    }
+
+    function abrirModal(id) {
+      const negocio = todosLosNegocios.find(n => n.id === id);
+      if (!negocio) return;
+
+      document.getElementById("modal-categoria").textContent = negocio.categoria;
+      document.getElementById("modal-nombre").textContent = negocio.nombre;
+      document.getElementById("modal-ubicacion").textContent = `📍 ${negocio.ubicacion}`;
+      document.getElementById("modal-descripcion").textContent = negocio.descripcion;
+      document.getElementById("modal-telefono").textContent = negocio.telefono || "No facilitat";
+      document.getElementById("modal-correo").textContent = negocio.correo || "No facilitat";
+
+      const spanWeb = document.getElementById("modal-web");
+      if (negocio.web) {
+        const url = negocio.web.startsWith("http") ? negocio.web : `https://${negocio.web}`;
+        spanWeb.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${negocio.web}</a>`;
+      } else {
+        spanWeb.textContent = "No facilitada";
+      }
+
+      // Inicialitzar carrusel de fotos
+      fotosActuales = (negocio.fotos && negocio.fotos.length > 0)
+        ? negocio.fotos
+        : (FOTOS_POR_DEFECTO[negocio.categoria] || FOTOS_POR_DEFECTO.default);
+      indiceFoto = 0;
+      actualizarCarrusel();
+
+      document.getElementById("modal-contacto").classList.add("activo");
+    }
+
+    function actualizarCarrusel() {
+      document.getElementById("carrusel-imagen").src = fotosActuales[indiceFoto];
+
+      const indicadores = document.getElementById("carrusel-indicadores");
+      indicadores.innerHTML = fotosActuales.map((_, i) => `
+        <span class="carrusel-punto ${i === indiceFoto ? "activo" : ""}" onclick="irAFoto(${i})"></span>
+      `).join("");
+    }
+
+    function cambiarFoto(direccion) {
+      indiceFoto = (indiceFoto + direccion + fotosActuales.length) % fotosActuales.length;
+      actualizarCarrusel();
+    }
+
+    function irAFoto(indice) {
+      indiceFoto = indice;
+      actualizarCarrusel();
+    }
+
+    function cerrarModal() {
+      document.getElementById("modal-contacto").classList.remove("activo");
+    }
+
+    function cerrarModalSiFuera(event) {
+      if (event.target.id === "modal-contacto") {
+        cerrarModal();
+      }
+    }
+
+    cargarNegocios();
+  </script>
 </body>
 </html>
