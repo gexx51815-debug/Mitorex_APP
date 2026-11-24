@@ -1,70 +1,148 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="ca">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Panel Admin - Mitorex APP</title>
+  <title>Panell d'Administració - Mitorex APP</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
     <div>
-      <h1>Panel de Administración</h1>
-      <p>Gestiona y valida las solicitudes de PYMEs</p>
+      <h1>Mitorex · Panell Admin</h1>
+      <p>Gestió de sol·licituds, validació d'empreses i control de propietaris</p>
     </div>
-    <a href="index.html" class="btn-volver">← Ver escaparate público</a>
+    <div class="nav-acciones">
+      <a href="index.html" class="btn-volver">← Tornar al directori</a>
+      <button onclick="tancarSessioAdmin()" class="btn-secundario">Tancar sessió</button>
+    </div>
   </header>
 
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Empresa</th>
-        <th>Categoría</th>
-        <th>Ubicación</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody id="tabla-negocios">
-      <tr><td colspan="6">Cargando solicitudes...</td></tr>
-    </tbody>
-  </table>
+  <main>
+    <div id="alerta-admin" class="alerta"></div>
+
+    <section class="barra-filtros">
+      <input
+        type="text"
+        id="buscador-admin"
+        placeholder="Cercar per nom, ciutat o ID..."
+        oninput="filtrarTablaAdmin()"
+      />
+      <select id="filtro-estado" onchange="filtrarTablaAdmin()">
+        <option value="">Tots els estats</option>
+        <option value="pendiente">Pendents d'aprovació</option>
+        <option value="aprobado">Aprovats</option>
+        <option value="rechazado">Rebutjats</option>
+      </select>
+    </section>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Negoci</th>
+          <th>Categoria</th>
+          <th>Ubicació</th>
+          <th>Propietari (FK)</th>
+          <th>Estat</th>
+          <th>Accions</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-negocios">
+        <tr>
+          <td colspan="7">Carregant dades...</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
 
   <script>
+    const usuarioActual = JSON.parse(localStorage.getItem("mitorex_usuario") || "null");
+    if (!usuarioActual || usuarioActual.rol !== "admin") {
+      window.location.href = "el-meu-negoci.html";
+    }
+
+    function tancarSessioAdmin() {
+      localStorage.removeItem("mitorex_usuario");
+      window.location.href = "index.html";
+    }
+
     const API_URL = "http://localhost:9000";
+    let todosAdmin = [];
+
+    function mostrarAlerta(texto, tipo) {
+      const box = document.getElementById("alerta-admin");
+      box.textContent = texto;
+      box.className = `alerta ${tipo}`;
+      box.style.display = "block";
+      setTimeout(() => { box.style.display = "none"; }, 3500);
+    }
 
     async function cargarTodos() {
       const tbody = document.getElementById("tabla-negocios");
       try {
         const res = await fetch(`${API_URL}/admin/negocios`);
-        const negocios = await res.json();
-
-        if (negocios.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6">No hay negocios registrados todavía.</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = negocios.map(n => `
-          <tr>
-            <td>#${n.id}</td>
-            <td>
-              <strong>${n.nombre}</strong><br>
-              <small style="color:#64748b">${n.correo || "Sin correo"} · ${n.telefono || "Sin teléfono"}</small>
-            </td>
-            <td>${n.categoria}</td>
-            <td>${n.ubicacion}</td>
-            <td><span class="estado ${n.estado}">${n.estado}</span></td>
-            <td class="acciones">
-              <button class="btn-aprobar" onclick="cambiarEstado(${n.id}, 'aprobado')">Aprobar</button>
-              <button class="btn-rechazar" onclick="cambiarEstado(${n.id}, 'rechazado')">Rechazar</button>
-            </td>
-          </tr>
-        `).join("");
-      } catch (error) {
-        console.error(error);
-        tbody.innerHTML = '<tr><td colspan="6">Error al conectar con el backend.</td></tr>';
+        if (!res.ok) throw new Error("Error al carregar els negocis");
+        todosAdmin = await res.json();
+        filtrarTablaAdmin();
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="7">No s\'ha pogut connectar amb el servidor backend.</td></tr>';
       }
+    }
+
+    function filtrarTablaAdmin() {
+      const texto = document.getElementById("buscador-admin").value.toLowerCase().trim();
+      const estado = document.getElementById("filtro-estado").value;
+
+      const filtrados = todosAdmin.filter(n => {
+        const coincideTexto =
+          n.nombre.toLowerCase().includes(texto) ||
+          n.ubicacion.toLowerCase().includes(texto) ||
+          String(n.id).includes(texto);
+        const coincideEstado = estado === "" || n.estado === estado;
+        return coincideTexto && coincideEstado;
+      });
+
+      pintarTabla(filtrados);
+    }
+
+    function pintarTabla(lista) {
+      const tbody = document.getElementById("tabla-negocios");
+
+      if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No hi ha negocis que coincideixin amb el filtre.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = lista.map(n => `
+        <tr>
+          <td><strong>#${n.id}</strong></td>
+          <td>
+            <strong>${n.nombre}</strong><br />
+            <span style="font-size: 12px; color: #526477;">${n.correo || "Sense correu"}</span>
+          </td>
+          <td>${n.categoria}</td>
+          <td>${n.ubicacion}</td>
+          <td>
+            ${n.usuario_id
+              ? `<span class="badge">Usuari #${n.usuario_id}</span>`
+              : '<span style="font-size: 12px; color: #64748b;">Sense compte</span>'}
+          </td>
+          <td><span class="estado ${n.estado}">${n.estado}</span></td>
+          <td>
+            <div class="acciones">
+              <button class="btn-aprobar" onclick="cambiarEstado(${n.id}, 'aprobado')">Aprovar</button>
+              <button class="btn-rechazar" onclick="cambiarEstado(${n.id}, 'rechazado')">Rebutjar</button>
+              <button
+                onclick="eliminarNegocio(${n.id}, '${n.nombre.replace(/'/g, "\\'")}')"
+                style="background: #475569; color: white; border: none; padding: 8px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px;"
+                title="Eliminar definitivament"
+              >🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
     }
 
     async function cambiarEstado(id, nuevoEstado) {
@@ -72,11 +150,28 @@
         const res = await fetch(`${API_URL}/admin/negocios/${id}/estado?estado=${nuevoEstado}`, {
           method: "PATCH"
         });
-        if (!res.ok) throw new Error("Error al actualizar estado");
+        if (!res.ok) throw new Error("No s'ha pogut actualitzar l'estat");
+
+        mostrarAlerta(`Negoci #${id} marcat com a "${nuevoEstado}".`, "exito");
         cargarTodos();
-      } catch (error) {
-        alert("No se pudo cambiar el estado.");
-        console.error(error);
+      } catch (err) {
+        mostrarAlerta(err.message, "error");
+      }
+    }
+
+    async function eliminarNegocio(id, nombre) {
+      if (!confirm(`Segur que vols eliminar definitivament "${nombre}" (#${id})?`)) return;
+
+      try {
+        const res = await fetch(`${API_URL}/admin/negocios/${id}`, {
+          method: "DELETE"
+        });
+        if (!res.ok) throw new Error("No s'ha pogut eliminar el negoci");
+
+        mostrarAlerta(`Negoci "${nombre}" eliminat correctament.`, "exito");
+        cargarTodos();
+      } catch (err) {
+        mostrarAlerta(err.message, "error");
       }
     }
 

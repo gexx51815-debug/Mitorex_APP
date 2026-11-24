@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Àrea Empreses - Mitorex APP</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Mitorex · Àrea Empreses</h1>
+      <p>Gestiona i actualitza la fitxa del teu negoci</p>
+    </div>
+    <div class="nav-acciones">
+      <a href="index.html" class="btn-volver">← Tornar a l'escaparate</a>
+    </div>
+  </header>
+
+  <main>
+    <div id="mensaje-global" class="alerta"></div>
+
+    <!-- VISTA 1: Inici de sessió i Registre de propietari -->
+    <section id="vista-auth" class="auth-grid">
+      <form onsubmit="iniciarSessio(event)">
+        <h2 style="margin: 0; color: #183153;">Iniciar sessió</h2>
+        <p style="margin: 0; color: #526477; font-size: 14px;">Accedeix amb el teu compte de propietari</p>
+
+        <label>
+          Correu electrònic *
+          <input type="email" id="login-correo" required placeholder="propietari@mitorex.cat" />
+        </label>
+
+        <label>
+          Contrasenya *
+          <input type="password" id="login-password" required placeholder="••••••••" />
+        </label>
+
+        <button type="submit">Entrar al meu espai</button>
+      </form>
+
+      <form onsubmit="registrarPropietari(event)">
+        <h2 style="margin: 0; color: #183153;">Crear compte d'empresa</h2>
+        <p style="margin: 0; color: #526477; font-size: 14px;">Registra't per donar d'alta i editar els teus negocis</p>
+
+        <label>
+          Nom del responsable *
+          <input type="text" id="reg-nombre" required minlength="2" placeholder="Ex: Marc" />
+        </label>
+
+        <label>
+          Cognoms *
+          <input type="text" id="reg-apellidos" required minlength="2" placeholder="Ex: Vila Puig" />
+        </label>
+
+        <label>
+          Correu electrònic *
+          <input type="email" id="reg-correo" required placeholder="marc@empresa.cat" />
+        </label>
+
+        <label>
+          Contrasenya (mínim 4 caràcters) *
+          <input type="password" id="reg-password" required minlength="4" placeholder="••••••••" />
+        </label>
+
+        <button type="submit">Crear compte</button>
+      </form>
+    </section>
+
+    <!-- VISTA 2: Panell privat del propietari -->
+    <section id="vista-panel" style="display: none;">
+      <div class="panel-header">
+        <div>
+          <h2 id="saludo-usuario" style="margin: 0; color: #183153;"></h2>
+          <p id="correo-usuario" style="margin: 4px 0 0 0; color: #526477; font-size: 14px;"></p>
+        </div>
+        <div class="nav-acciones">
+          <a href="registro.html" class="btn-primario">+ Afegir nou negoci</a>
+          <button onclick="tancarSessio()" class="btn-secundario" style="border: 1px solid #cbd5e1;">Tancar sessió</button>
+        </div>
+      </div>
+
+      <div id="lista-mis-negocios">Carregant els teus negocis...</div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "http://localhost:9000";
+
+    const CATEGORIAS = [
+      "Hostaleria",
+      "Restaurant",
+      "Pastisseria",
+      "Comerç",
+      "Serveis",
+      "Tecnologia",
+      "Salut i Bellesa",
+      "Reformes i Llar",
+      "Automoció",
+      "Educació i Formació",
+      "Esport i Oci",
+      "Assessoria i Legal",
+      "Transport i Logística",
+      "Altres"
+    ];
+
+    function mostrarAlerta(texto, tipo) {
+      const box = document.getElementById("mensaje-global");
+      box.textContent = texto;
+      box.className = `alerta ${tipo}`;
+      box.style.display = "block";
+      setTimeout(() => { box.style.display = "none"; }, 4500);
+    }
+
+    function obtenerUsuarioActual() {
+      const raw = localStorage.getItem("mitorex_usuario");
+      return raw ? JSON.parse(raw) : null;
+    }
+
+    async function registrarPropietari(event) {
+      event.preventDefault();
+      const payload = {
+        nombre: document.getElementById("reg-nombre").value.trim(),
+        apellidos: document.getElementById("reg-apellidos").value.trim(),
+        correo: document.getElementById("reg-correo").value.trim(),
+        password: document.getElementById("reg-password").value
+      };
+
+      try {
+        const res = await fetch(`${API_URL}/usuarios/registro`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Error al crear el compte");
+
+        localStorage.setItem("mitorex_usuario", JSON.stringify(data));
+        mostrarAlerta("Compte creat correctament! Benvingut a Mitorex.", "exito");
+        comprovarSessio();
+      } catch (err) {
+        mostrarAlerta(err.message, "error");
+      }
+    }
+
+    async function iniciarSessio(event) {
+      event.preventDefault();
+      const payload = {
+        correo: document.getElementById("login-correo").value.trim(),
+        password: document.getElementById("login-password").value
+      };
+
+      try {
+        const res = await fetch(`${API_URL}/usuarios/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Credencials incorrectes");
+
+        localStorage.setItem("mitorex_usuario", JSON.stringify(data));
+        comprovarSessio();
+      } catch (err) {
+        mostrarAlerta(err.message, "error");
+      }
+    }
+
+    function tancarSessio() {
+      localStorage.removeItem("mitorex_usuario");
+      comprovarSessio();
+    }
+
+    function comprovarSessio() {
+      const usuario = obtenerUsuarioActual();
+      const vistaAuth = document.getElementById("vista-auth");
+      const vistaPanel = document.getElementById("vista-panel");
+
+      if (!usuario) {
+        vistaAuth.style.display = "grid";
+        vistaPanel.style.display = "none";
+        return;
+      }
+
+      if (usuario.rol === "admin") {
+        window.location.href = "admin.html";
+        return;
+    }
+
+      vistaAuth.style.display = "none";
+      vistaPanel.style.display = "block";
+      const nombreCompleto = `${usuario.nombre} ${usuario.apellidos || ""}`.trim();
+      document.getElementById("saludo-usuario").textContent = `Hola, ${nombreCompleto}`;
+      document.getElementById("correo-usuario").textContent = `Compte vinculat: ${usuario.correo} (ID #${usuario.id})`;
+      carregarElsMeusNegocis(usuario.id);
+    }
+
+    async function carregarElsMeusNegocis(usuarioId) {
+      const contenedor = document.getElementById("lista-mis-negocios");
+      try {
+        const res = await fetch(`${API_URL}/usuarios/${usuarioId}/negocios`);
+        const negocios = await res.json();
+
+        if (negocios.length === 0) {
+          contenedor.innerHTML = `
+            <div class="negocio-item" style="text-align: center; padding: 40px;">
+              <h3 style="color: #183153; margin-top: 0;">Encara no tens cap negoci vinculat</h3>
+              <p style="color: #526477; margin-bottom: 20px;">Dona d'alta la teva empresa per aparèixer al directori i gestionar les teves dades.</p>
+              <a href="registro.html" class="btn-primario">+ Registrar el meu primer negoci</a>
+            </div>
+          `;
+          return;
+        }
+
+        contenedor.innerHTML = negocios.map(n => `
+          <div class="negocio-item">
+            <div class="negocio-item-top">
+              <div>
+                <h3 style="margin: 0; color: #183153;">${n.nombre}</h3>
+                <span style="font-size: 13px; color: #526477;">ID Negoci #${n.id}</span>
+              </div>
+              <span class="estado ${n.estado}">${n.estado}</span>
+            </div>
+
+            <form onsubmit="guardarCanvisNegoci(event, ${usuarioId}, ${n.id})" style="box-shadow: none; padding: 0;">
+              <div class="form-grid-2">
+                <label>
+                  Nom del negoci *
+                  <input type="text" id="nom-${n.id}" value="${n.nombre}" required />
+                </label>
+
+                <label>
+                  Categoria *
+                  <select id="cat-${n.id}" required>
+                    ${CATEGORIAS.map(c => `<option value="${c}" ${c === n.categoria ? "selected" : ""}>${c}</option>`).join("")}
+                  </select>
+                </label>
+
+                <label>
+                  Ubicació (Ciutat) *
+                  <input type="text" id="ubi-${n.id}" value="${n.ubicacion}" required />
+                </label>
+
+                <label>
+                  Telèfon de contacte
+                  <input type="text" id="tel-${n.id}" value="${n.telefono || ""}" />
+                </label>
+
+                <label>
+                  Correu del negoci
+                  <input type="email" id="cor-${n.id}" value="${n.correo || ""}" />
+                </label>
+
+                <label>
+                  Pàgina web
+                  <input type="text" id="web-${n.id}" value="${n.web || ""}" />
+                </label>
+              </div>
+
+              <label>
+                Descripció *
+                <textarea id="desc-${n.id}" rows="3" required>${n.descripcion}</textarea>
+              </label>
+
+              <button type="submit">Desar canvis</button>
+            </form>
+          </div>
+        `).join("");
+      } catch (err) {
+        console.error(err);
+        contenedor.innerHTML = "<p>Error al carregar els teus negocis.</p>";
+      }
+    }
+
+    async function guardarCanvisNegoci(event, usuarioId, negocioId) {
+      event.preventDefault();
+      const payload = {
+        nombre: document.getElementById(`nom-${negocioId}`).value.trim(),
+        categoria: document.getElementById(`cat-${negocioId}`).value,
+        ubicacion: document.getElementById(`ubi-${negocioId}`).value.trim(),
+        telefono: document.getElementById(`tel-${negocioId}`).value.trim(),
+        correo: document.getElementById(`cor-${negocioId}`).value.trim(),
+        web: document.getElementById(`web-${negocioId}`).value.trim(),
+        descripcion: document.getElementById(`desc-${negocioId}`).value.trim()
+      };
+
+      try {
+        const res = await fetch(`${API_URL}/usuarios/${usuarioId}/negocios/${negocioId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "No s'han pogut desar els canvis");
+
+        mostrarAlerta(`Dades de "${data.nombre}" actualitzades correctament!`, "exito");
+        carregarElsMeusNegocis(usuarioId);
+      } catch (err) {
+        mostrarAlerta(err.message, "error");
+      }
+    }
+
+    comprovarSessio();
+  </script>
+</body>
+</html>

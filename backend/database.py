@@ -1,7 +1,7 @@
 import os
 
-from sqlalchemy import create_engine, Column, Integer, String, Text
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from sqlalchemy.engine import URL
 
 
@@ -36,6 +36,19 @@ def get_db():
         db.close()
 
 
+class DBUsuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(100), nullable=False)
+    apellidos = Column(String(150), nullable=False, default="")
+    correo = Column(String(100), unique=True, index=True, nullable=False)
+    password = Column(String(255), nullable=False)
+    rol = Column(String(20), nullable=False, default="propietario")
+
+    negocios = relationship("DBNegocio", back_populates="propietario")
+
+
 class DBNegocio(Base):
     __tablename__ = "negocios"
 
@@ -48,3 +61,6 @@ class DBNegocio(Base):
     correo = Column(String(100), default="")
     web = Column(String(150), default="")
     estado = Column(String(20), default="pendiente")
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+
+    propietario = relationship("DBUsuario", back_populates="negocios")

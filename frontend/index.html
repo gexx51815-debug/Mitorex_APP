@@ -13,7 +13,7 @@
       <p>Connecta amb petites i mitjanes empreses verificades</p>
     </div>
     <div class="nav-acciones">
-      <a href="admin.html" class="btn-secundario">Panell Admin</a>
+      <a href="el-meu-negoci.html" class="btn-secundario">Àrea Empreses</a>
       <a href="registro.html" class="btn-primario">+ Registrar el meu negoci</a>
     </div>
   </header>
@@ -28,6 +28,9 @@
       />
       <select id="filtro-categoria" onchange="filtrarNegocios()">
         <option value="">Totes les categories</option>
+      </select>
+      <select id="filtro-ubicacion" onchange="filtrarNegocios()">
+        <option value="">Totes les ubicacions</option>
       </select>
     </section>
 
@@ -92,7 +95,6 @@
       default: [
         "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
         "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&q=80",
-        "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80"
       ]
     };
 
@@ -104,6 +106,7 @@
 
         todosLosNegocios = await respuesta.json();
         actualizarDesplegableCategorias(todosLosNegocios);
+        actualizarDesplegableUbicaciones(todosLosNegocios);
         pintarTarjetas(todosLosNegocios);
       } catch (error) {
         console.error(error);
@@ -117,6 +120,14 @@
 
       select.innerHTML = '<option value="">Totes les categories</option>' +
         categoriasUnicas.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+    }
+
+    function actualizarDesplegableUbicaciones(negocios) {
+      const select = document.getElementById("filtro-ubicacion");
+      const ubicacionesUnicas = [...new Set(negocios.map(n => n.ubicacion.trim()))].sort();
+
+      select.innerHTML = '<option value="">Totes les ubicacions</option>' +
+        ubicacionesUnicas.map(ubi => `<option value="${ubi}">${ubi}</option>`).join("");
     }
 
     function pintarTarjetas(lista) {
@@ -143,6 +154,7 @@
     function filtrarNegocios() {
       const texto = document.getElementById("buscador").value.toLowerCase().trim();
       const categoria = document.getElementById("filtro-categoria").value;
+      const ubicacion = document.getElementById("filtro-ubicacion").value;
 
       const filtrados = todosLosNegocios.filter(n => {
         const coincideTexto =
@@ -151,7 +163,9 @@
           n.descripcion.toLowerCase().includes(texto);
 
         const coincideCategoria = categoria === "" || n.categoria === categoria;
-        return coincideTexto && coincideCategoria;
+        const coincideUbicacion = ubicacion === "" || n.ubicacion.trim() === ubicacion;
+
+        return coincideTexto && coincideCategoria && coincideUbicacion;
       });
 
       pintarTarjetas(filtrados);
