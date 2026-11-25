@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mitorex APP - Directori de PIMEs</title>
+  <title>Mitorex APP - Directori i Serveis Locals</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
     <div>
       <h1>Mitorex</h1>
-      <p>Connecta amb petites i mitjanes empreses verificades</p>
+      <p>Connecta amb petites i mitjanes empreses i reserva serveis a la teva zona</p>
     </div>
     <div class="nav-acciones">
       <a href="el-meu-negoci.html" class="btn-secundario">Àrea Empreses</a>
@@ -32,17 +32,22 @@
       <select id="filtro-ubicacion" onchange="filtrarNegocios()">
         <option value="">Totes les ubicacions</option>
       </select>
+      <label style="flex-direction: row; align-items: center; gap: 8px; cursor: pointer; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 8px 12px; border-radius: 8px; color: #15803d; font-size: 14px;">
+      <input type="checkbox" id="filtro-reservas" onchange="filtrarNegocios()" style="width: 16px; height: 16px;" />
+      🟢 Només amb reserva online
+      </label>
     </section>
 
     <div id="lista-negocios" class="grid">Carregant empreses...</div>
   </main>
 
-  <!-- Modal ampliat amb informació a l'esquerra i carrusel a la dreta -->
+  <!-- Modal ampliat equilibrat en dues columnes -->
   <div id="modal-contacto" class="modal-fondo" onclick="cerrarModalSiFuera(event)">
     <div class="modal-contenido">
       <button class="modal-cerrar" onclick="cerrarModal()">&times;</button>
 
       <div class="modal-grid">
+        <!-- Columna esquerra: Informació i contacte -->
         <div class="modal-info">
           <span id="modal-categoria" class="badge"></span>
           <h2 id="modal-nombre"></h2>
@@ -59,11 +64,41 @@
           </div>
         </div>
 
-        <div class="carrusel">
-          <img id="carrusel-imagen" src="" alt="Fotografia del negoci" />
-          <button class="carrusel-btn prev" onclick="cambiarFoto(-1)">&#10094;</button>
-          <button class="carrusel-btn next" onclick="cambiarFoto(1)">&#10095;</button>
-          <div id="carrusel-indicadores" class="carrusel-indicadores"></div>
+        <!-- Columna dreta: Carrusel a dalt + Assistent de reserves a baix -->
+        <div class="modal-derecha">
+          <div class="carrusel">
+            <img id="carrusel-imagen" src="" alt="Fotografia del negoci" />
+            <button class="carrusel-btn prev" onclick="cambiarFoto(-1)">&#10094;</button>
+            <button class="carrusel-btn next" onclick="cambiarFoto(1)">&#10095;</button>
+            <div id="carrusel-indicadores" class="carrusel-indicadores"></div>
+          </div>
+
+          <div id="modal-bloque-servicios" class="caja-servicios-modal" style="display: none;">
+            <div class="horario-pill">
+              <strong>🕒 Horari:</strong> <span id="modal-horario"></span>
+            </div>
+
+            <form onsubmit="enviarSolicitudCliente(event)" class="form-modal-compacto">
+              <div class="form-modal-fila">
+                <input type="date" id="sol-fecha" required onchange="comprobarDisponibilidad()" />
+                <input type="time" id="sol-hora" step="1800" required onchange="comprobarDisponibilidad()" />
+              </div>
+
+              <!-- Resposta de l'assistent de disponibilitat -->
+              <div id="asistente-respuesta" style="font-size: 12.5px; padding: 8px 10px; border-radius: 8px; background: #e0f2fe; color: #0369a1; line-height: 1.4;">
+                🤖 Tria una data i una hora per comprovar disponibilitat al moment.
+              </div>
+              <div id="asistente-sugerencias" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
+
+              <div class="form-modal-fila">
+                <input type="text" id="sol-nombre" required placeholder="El teu nom" />
+                <input type="text" id="sol-contacto" required placeholder="Telèfon o correu" />
+              </div>
+              <input type="text" id="sol-mensaje" placeholder="Motiu o detall del servei (opcional)" />
+              <button type="submit" id="btn-reservar-modal">Confirmar reserva</button>
+            </form>
+            <div id="sol-feedback" style="margin-top: 6px; font-size: 13px; font-weight: bold;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -72,10 +107,10 @@
   <script>
     const API_URL = "http://localhost:9000";
     let todosLosNegocios = [];
+    let negocioSeleccionadoId = null;
     let fotosActuales = [];
     let indiceFoto = 0;
 
-    // Fotos d'exemple per categoria mentre no hi hagi taula d'imatges a la BD
     const FOTOS_POR_DEFECTO = {
       Pastisseria: [
         "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=80",
@@ -95,6 +130,7 @@
       default: [
         "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
         "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&q=80",
+        "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80"
       ]
     };
 
@@ -141,40 +177,48 @@
       contenedor.innerHTML = lista.map(negocio => `
         <article class="card">
           <div>
-            <span class="badge">${negocio.categoria}</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span class="badge">${negocio.categoria}</span>
+              ${negocio.servicios_activos ? '<span style="font-size: 11px; font-weight: bold; color: #15803d; background: #dcfce7; padding: 3px 8px; border-radius: 999px;">🟢 Reserves / Consultes</span>' : ''}
+            </div>
             <h2>${negocio.nombre}</h2>
             <p class="ubicacion">📍 ${negocio.ubicacion}</p>
             <p>📞 ${negocio.telefono || "No facilitat"}</p>
           </div>
-          <button class="boton-negocio" onclick="abrirModal(${negocio.id})">Veure contacte</button>
+          <button class="boton-negocio" onclick="abrirModal(${negocio.id})">
+            ${negocio.servicios_activos ? "Veure horari i reservar" : "Veure contacte"}
+          </button>
         </article>
       `).join("");
     }
 
     function filtrarNegocios() {
-      const texto = document.getElementById("buscador").value.toLowerCase().trim();
-      const categoria = document.getElementById("filtro-categoria").value;
-      const ubicacion = document.getElementById("filtro-ubicacion").value;
+        const texto = document.getElementById("buscador").value.toLowerCase().trim();
+        const categoria = document.getElementById("filtro-categoria").value;
+        const ubicacion = document.getElementById("filtro-ubicacion").value;
+        const soloReservas = document.getElementById("filtro-reservas").checked;
 
-      const filtrados = todosLosNegocios.filter(n => {
-        const coincideTexto =
-          n.nombre.toLowerCase().includes(texto) ||
-          n.ubicacion.toLowerCase().includes(texto) ||
-          n.descripcion.toLowerCase().includes(texto);
+        const filtrados = todosLosNegocios.filter(n => {
+          const coincideTexto =
+            n.nombre.toLowerCase().includes(texto) ||
+            n.ubicacion.toLowerCase().includes(texto) ||
+            n.descripcion.toLowerCase().includes(texto);
 
-        const coincideCategoria = categoria === "" || n.categoria === categoria;
-        const coincideUbicacion = ubicacion === "" || n.ubicacion.trim() === ubicacion;
+          const coincideCategoria = categoria === "" || n.categoria === categoria;
+          const coincideUbicacion = ubicacion === "" || n.ubicacion.trim() === ubicacion;
+          const coincideReservas = !soloReservas || n.servicios_activos;
 
-        return coincideTexto && coincideCategoria && coincideUbicacion;
-      });
+          return coincideTexto && coincideCategoria && coincideUbicacion && coincideReservas;
+  });
 
-      pintarTarjetas(filtrados);
-    }
+  pintarTarjetas(filtrados);
+}
 
     function abrirModal(id) {
       const negocio = todosLosNegocios.find(n => n.id === id);
       if (!negocio) return;
 
+      negocioSeleccionadoId = negocio.id;
       document.getElementById("modal-categoria").textContent = negocio.categoria;
       document.getElementById("modal-nombre").textContent = negocio.nombre;
       document.getElementById("modal-ubicacion").textContent = `📍 ${negocio.ubicacion}`;
@@ -190,7 +234,24 @@
         spanWeb.textContent = "No facilitada";
       }
 
-      // Inicialitzar carrusel de fotos
+      const bloqueServicios = document.getElementById("modal-bloque-servicios");
+      const feedback = document.getElementById("sol-feedback");
+      feedback.textContent = "";
+
+      if (negocio.servicios_activos) {
+        bloqueServicios.style.display = "block";
+        document.getElementById("modal-horario").textContent = negocio.horario || "Consultar disponibilitat";
+
+        const hoy = new Date().toISOString().split("T")[0];
+        const inputFecha = document.getElementById("sol-fecha");
+        inputFecha.min = hoy;
+        inputFecha.value = hoy;
+        document.getElementById("sol-hora").value = "10:00";
+        comprobarDisponibilidad();
+      } else {
+        bloqueServicios.style.display = "none";
+      }
+
       fotosActuales = (negocio.fotos && negocio.fotos.length > 0)
         ? negocio.fotos
         : (FOTOS_POR_DEFECTO[negocio.categoria] || FOTOS_POR_DEFECTO.default);
@@ -198,6 +259,88 @@
       actualizarCarrusel();
 
       document.getElementById("modal-contacto").classList.add("activo");
+    }
+
+    async function comprobarDisponibilidad() {
+      const fecha = document.getElementById("sol-fecha").value;
+      const hora = document.getElementById("sol-hora").value;
+      const boxResp = document.getElementById("asistente-respuesta");
+      const boxSug = document.getElementById("asistente-sugerencias");
+      const btnReservar = document.getElementById("btn-reservar-modal");
+
+      if (!negocioSeleccionadoId || !fecha || !hora) return;
+
+      try {
+        const res = await fetch(`${API_URL}/negocios/${negocioSeleccionadoId}/disponibilidad?fecha=${fecha}&hora=${hora}`);
+        const data = await res.json();
+
+        boxResp.textContent = data.mensaje_asistente;
+        if (data.disponible) {
+          boxResp.style.background = "#dcfce7";
+          boxResp.style.color = "#166534";
+          btnReservar.disabled = false;
+          btnReservar.style.opacity = "1";
+        } else {
+          boxResp.style.background = "#fee2e2";
+          boxResp.style.color = "#991b1b";
+          btnReservar.disabled = true;
+          btnReservar.style.opacity = "0.5";
+        }
+
+        if (data.horas_libres && data.horas_libres.length > 0 && !data.disponible) {
+          boxSug.innerHTML = data.horas_libres.map(h => `
+            <button type="button" onclick="seleccionarHoraSugerida('${h}')" style="background: #183153; color: white; border: none; border-radius: 6px; padding: 3px 8px; font-size: 11.5px; cursor: pointer;">
+              ${h}
+            </button>
+          `).join("");
+        } else {
+          boxSug.innerHTML = "";
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function seleccionarHoraSugerida(hora) {
+      document.getElementById("sol-hora").value = hora;
+      comprobarDisponibilidad();
+    }
+
+    async function enviarSolicitudCliente(event) {
+      event.preventDefault();
+      if (!negocioSeleccionadoId) return;
+
+      const feedback = document.getElementById("sol-feedback");
+      const payload = {
+        fecha_reserva: document.getElementById("sol-fecha").value,
+        hora_reserva: document.getElementById("sol-hora").value,
+        cliente_nombre: document.getElementById("sol-nombre").value.trim(),
+        cliente_contacto: document.getElementById("sol-contacto").value.trim(),
+        mensaje: document.getElementById("sol-mensaje").value.trim()
+      };
+
+      try {
+        const res = await fetch(`${API_URL}/negocios/${negocioSeleccionadoId}/solicitudes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "No s'ha pogut enviar la reserva");
+
+        feedback.style.color = "#15803d";
+        feedback.textContent = data.estado === "aceptado"
+          ? `✅ Reserva confirmada automàticament per al ${data.fecha_reserva} a les ${data.hora_reserva}!`
+          : `✅ Sol·licitud enviada per al ${data.fecha_reserva} a les ${data.hora_reserva} (pendent de confirmació).`;
+
+        document.getElementById("sol-nombre").value = "";
+        document.getElementById("sol-contacto").value = "";
+        document.getElementById("sol-mensaje").value = "";
+        comprobarDisponibilidad();
+      } catch (err) {
+        feedback.style.color = "#dc2626";
+        feedback.textContent = `❌ ${err.message}`;
+      }
     }
 
     function actualizarCarrusel() {

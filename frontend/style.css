@@ -9,7 +9,7 @@
   margin: 10px 0 12px 0;
 }
 
-/* Botón del header en azul más intenso sobre la cabecera #27C5FF */
+/* Botón del header en azul más intenso sobre la cabecera #27C5FF -----------------------------------------------------------------------------------------*/
 header .btn-primario {
   background-color: #0284c7;
 }
@@ -26,7 +26,7 @@ body {
   color: #222;
 }
 
-/* Cabecera superior con tu color corporativo */
+/* Cabecera superior con tu color corporativo -----------------------------------------------------------------------------------------*/
 header {
   background-color: #27C5FF;
   color: white;
@@ -59,7 +59,7 @@ main {
   max-width: 650px;
 }
 
-/* Navegación y botones */
+/* Navegación y botones -----------------------------------------------------------------------------------------*/
 .nav-acciones {
   display: flex;
   gap: 0.8rem;
@@ -104,7 +104,7 @@ main {
   background-color: #f1f5f9;
 }
 
-/* Rejilla y tarjetas de negocios (index.html) */
+/* Rejilla y tarjetas de negocios (index.html) -----------------------------------------------------------------------------------------*/
 .grid, .contenedor-negocios {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -149,7 +149,7 @@ main {
   font-size: 14px;
 }
 
-/* Formulario de registro (registro.html) */
+/* Formulario de registro (registro.html) -----------------------------------------------------------------------------------------*/
 form {
   background-color: #ffffff;
   padding: 28px;
@@ -199,7 +199,7 @@ form button[type="submit"]:hover {
   background-color: #2874c7;
 }
 
-/* Alertas */
+/* Alertas -----------------------------------------------------------------------------------------*/
 .alerta {
   padding: 14px;
   border-radius: 8px;
@@ -220,7 +220,7 @@ form button[type="submit"]:hover {
   border: 1px solid #fca5a5;
 }
 
-/* Tabla del Panel de Administración (admin.html) */
+/* Tabla del Panel de Administración (admin.html) -----------------------------------------------------------------------------------------*/
 table {
   width: 100%;
   border-collapse: collapse;
@@ -275,7 +275,7 @@ th {
 .btn-rechazar { background-color: #dc2626; }
 .btn-rechazar:hover { background-color: #b91c1c; }
 
-/* Barra de búsqueda y filtros */
+/* Barra de búsqueda y filtros -----------------------------------------------------------------------------------------*/
 .barra-filtros {
   display: flex;
   gap: 12px;
@@ -329,9 +329,9 @@ th {
   background: #ffffff;
   padding: 32px;
   border-radius: 16px;
-  max-height: 500px;
-  height: 100%;
-  max-width: 1000px;
+  max-height: 88vh;
+  overflow-y: auto;
+  max-width: 1050px;
   width: 100%;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
   position: relative;
@@ -347,7 +347,13 @@ th {
 .modal-info {
   display: flex;
   flex-direction: column;
-  height: 100%;
+}
+
+.modal-derecha {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
 }
 
 .modal-info .badge {
@@ -357,7 +363,7 @@ th {
 .modal-info h2 {
   color: #183153;
   font-size: 1.7rem;
-  margin: 10px 0 6px 0;
+  margin: 10px 0 4px 0;
 }
 
 .modal-cerrar {
@@ -378,11 +384,11 @@ th {
 }
 
 .modal-descripcion-box {
-  max-height: 120px;
+  max-height: 230px;
   overflow-y: auto;
   padding-right: 6px;
-  margin: 10px 0 18px 0;
-  line-height: 1.5;
+  margin: 12px 0 18px 0;
+  line-height: 1.55;
   color: #334155;
   scrollbar-width: thin;
 }
@@ -395,11 +401,11 @@ th {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  padding: 16px;
+  padding: 14px 16px;
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .datos-contacto a {
@@ -408,24 +414,62 @@ th {
   text-decoration: none;
 }
 
-/* Carrusel de fotos (columna derecha) */
+/* Carrusel de fotos (columna derecha superior) */
 .carrusel {
   position: relative;
-  top: 15%;
   width: 100%;
-  height: 100%;
-  min-height: 340px;
+  height: 250px;
   border-radius: 12px;
   overflow: hidden;
   background-color: #183153;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .carrusel img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
+}
+
+/* Bloque de horario y consulta (columna derecha inferior) */
+.caja-servicios-modal {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.horario-pill {
+  color: #0369a1;
+  font-size: 13.5px;
+  margin-bottom: 8px;
+}
+
+.form-modal-compacto {
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
+  gap: 8px;
+}
+
+.form-modal-fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.form-modal-compacto input,
+.form-modal-compacto textarea {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.form-modal-compacto button[type="submit"] {
+  padding: 9px;
+  font-size: 14px;
+  margin-top: 2px;
 }
 
 .carrusel-btn {
@@ -484,7 +528,10 @@ th {
     grid-template-columns: 1fr;
   }
   .carrusel {
-    min-height: 230px;
+    height: 220px;
+  }
+  .form-modal-fila {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -539,4 +586,74 @@ th {
   .form-grid-2 {
     grid-template-columns: 1fr;
   }
+}
+
+/* Selector visual d'horari (el-meu-negoci.html) */
+.selector-horario-box {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dias-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dia-pill {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dia-pill.activo {
+  background: #183153;
+  color: #ffffff;
+  border-color: #183153;
+}
+
+.franjas-horario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.franja-grupo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #183153;
+  background: #f1f5f9;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.franja-grupo input[type="time"] {
+  padding: 4px 6px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.preview-horario {
+  font-size: 13px;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: bold;
 }

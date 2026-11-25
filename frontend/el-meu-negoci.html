@@ -10,10 +10,10 @@
   <header>
     <div>
       <h1>Mitorex · Àrea Empreses</h1>
-      <p>Gestiona i actualitza la fitxa del teu negoci</p>
+      <p>Gestiona la fitxa, l'horari i les sol·licituds del teu negoci</p>
     </div>
     <div class="nav-acciones">
-      <a href="index.html" class="btn-volver">← Tornar a l'escaparate</a>
+      <a href="index.html" class="btn-volver">← Tornar al directori</a>
     </div>
   </header>
 
@@ -80,6 +80,18 @@
         </div>
       </div>
 
+      <!-- Safata de sol·licituds i reserves de clients -->
+      <div class="negocio-item">
+        <div class="negocio-item-top">
+          <div>
+            <h2 style="margin: 0; color: #183153; font-size: 19px;">📩 Sol·licituds i reserves de clients</h2>
+            <span style="font-size: 13px; color: #526477;">Consultes i cites enviades pels usuaris des de l'escaparate</span>
+          </div>
+        </div>
+        <div id="lista-solicitudes">Carregant sol·licituds...</div>
+      </div>
+
+      <h2 style="color: #183153; margin: 24px 0 12px 0;">Els meus negocis i horaris</h2>
       <div id="lista-mis-negocios">Carregant els teus negocis...</div>
     </section>
   </main>
@@ -102,6 +114,16 @@
       "Assessoria i Legal",
       "Transport i Logística",
       "Altres"
+    ];
+
+    const DIAS_SEMANA = [
+      { id: "Dl", label: "Dl" },
+      { id: "Dt", label: "Dt" },
+      { id: "Dc", label: "Dc" },
+      { id: "Dj", label: "Dj" },
+      { id: "Dv", label: "Dv" },
+      { id: "Ds", label: "Ds" },
+      { id: "Dg", label: "Dg" }
     ];
 
     function mostrarAlerta(texto, tipo) {
@@ -185,14 +207,150 @@
       if (usuario.rol === "admin") {
         window.location.href = "admin.html";
         return;
-    }
+      }
 
       vistaAuth.style.display = "none";
       vistaPanel.style.display = "block";
       const nombreCompleto = `${usuario.nombre} ${usuario.apellidos || ""}`.trim();
       document.getElementById("saludo-usuario").textContent = `Hola, ${nombreCompleto}`;
       document.getElementById("correo-usuario").textContent = `Compte vinculat: ${usuario.correo} (ID #${usuario.id})`;
+      carregarSolicitudes(usuario.id);
       carregarElsMeusNegocis(usuario.id);
+    }
+
+    async function carregarSolicitudes(usuarioId) {
+      const contenedor = document.getElementById("lista-solicitudes");
+      try {
+        const res = await fetch(`${API_URL}/usuarios/${usuarioId}/solicitudes`);
+        const lista = await res.json();
+
+        if (lista.length === 0) {
+          contenedor.innerHTML = `<p style="color: #526477; margin: 0;">Encara no has rebut cap consulta ni reserva de clients.</p>`;
+          return;
+        }
+
+        contenedor.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Negoci</th>
+                <th>Data i Hora</th>
+                <th>Client</th>
+                <th>Contacte</th>
+                <th>Detall</th>
+                <th>Estat</th>
+                <th>Resposta</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lista.map(s => {
+                const claseEstado = s.estado === "aceptado" ? "aprobado" : (s.estado === "rechazado" ? "rechazado" : "pendiente");
+                return `
+                  <tr>
+                    <td><strong>${s.negocio_nombre}</strong></td>
+                    <td><span class="badge">${s.fecha_reserva || "-"} · ${s.hora_reserva || "-"}</span></td>
+                    <td>${s.cliente_nombre}</td>
+                    <td>${s.cliente_contacto}</td>
+                    <td>${s.mensaje}</td>
+                    <td><span class="estado ${claseEstado}">${s.estado}</span></td>
+                    <td>
+                      <div class="acciones">
+                        <button class="btn-aprobar" onclick="respondreSolicitud(${usuarioId}, ${s.id}, 'aceptado')">Acceptar</button>
+                        <button class="btn-rechazar" onclick="respondreSolicitud(${usuarioId}, ${s.id}, 'rechazado')">Rebutjar</button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        `;
+      } catch (err) {
+        console.error(err);
+        contenedor.innerHTML = "<p>Error al carregar les sol·licituds.</p>";
+      }
+    }
+
+    async function respondreSolicitud(usuarioId, solicitudId, nuevoEstado) {
+      try {
+        const res = await fetch(`${API_URL}/usuarios/${usuarioId}/solicitudes/${solicitudId}/estado?estado=${nuevoEstado}`, {
+          method: "PATCH"
+        });
+        if (!res.ok) throw new Error("No s'ha pogut actualitzar la sol·licitud");
+
+        mostrarAlerta(`Sol·licitud #${solicitudId} marcada com a "${nuevoEstado}".`, "exito");
+        carregarSolicitudes(usuarioId);
+      } catch (err) {
+        mostrarAlerta(err.message, "error");
+      }
+    }
+
+    // --- Helpers per al selector visual d'horari ---
+    function parsearHorarioGuardado(texto) {
+      const estado = {
+        dias: ["Dl", "Dt", "Dc", "Dj", "Dv"],
+        mInicio: "09:00",
+        mFin: "14:00",
+        tieneTarde: true,
+        tInicio: "16:30",
+        tFin: "20:00"
+      };
+
+      if (!texto) return estado;
+
+      const diasEncontrados = DIAS_SEMANA.map(d => d.id).filter(d => texto.includes(d));
+      if (diasEncontrados.length > 0) {
+        estado.dias = diasEncontrados;
+      }
+
+      const horas = texto.match(/\d{2}:\d{2}/g);
+      if (horas && horas.length >= 2) {
+        estado.mInicio = horas[0];
+        estado.mFin = horas[1];
+        if (horas.length >= 4) {
+          estado.tieneTarde = true;
+          estado.tInicio = horas[2];
+          estado.tFin = horas[3];
+        } else {
+          estado.tieneTarde = false;
+        }
+      }
+      return estado;
+    }
+
+    function toggleDia(btn, negocioId) {
+      btn.classList.toggle("activo");
+      actualitzarPreviewHorario(negocioId);
+    }
+
+    function generarTextoHorario(negocioId) {
+      const botonesActivos = document.querySelectorAll(`#dias-${negocioId} .dia-pill.activo`);
+      const dias = Array.from(botonesActivos).map(b => b.dataset.dia);
+
+      if (dias.length === 0) return "Consultar disponibilitat";
+
+      const m1 = document.getElementById(`m1-${negocioId}`).value || "09:00";
+      const m2 = document.getElementById(`m2-${negocioId}`).value || "14:00";
+      const conTarde = document.getElementById(`tarde-check-${negocioId}`).checked;
+
+      let franja = `${m1} - ${m2}`;
+      if (conTarde) {
+        const t1 = document.getElementById(`t1-${negocioId}`).value || "16:30";
+        const t2 = document.getElementById(`t2-${negocioId}`).value || "20:00";
+        franja += ` i ${t1} - ${t2}`;
+      }
+
+      return `${dias.join(", ")} · ${franja}`;
+    }
+
+    function actualitzarPreviewHorario(negocioId) {
+      const conTarde = document.getElementById(`tarde-check-${negocioId}`).checked;
+      document.getElementById(`tarde-inputs-${negocioId}`).style.opacity = conTarde ? "1" : "0.4";
+      document.getElementById(`t1-${negocioId}`).disabled = !conTarde;
+      document.getElementById(`t2-${negocioId}`).disabled = !conTarde;
+
+      const texto = generarTextoHorario(negocioId);
+      document.getElementById(`preview-hor-${negocioId}`).textContent = `🕒 Vista prèvia: ${texto}`;
     }
 
     async function carregarElsMeusNegocis(usuarioId) {
@@ -212,60 +370,117 @@
           return;
         }
 
-        contenedor.innerHTML = negocios.map(n => `
-          <div class="negocio-item">
-            <div class="negocio-item-top">
-              <div>
-                <h3 style="margin: 0; color: #183153;">${n.nombre}</h3>
-                <span style="font-size: 13px; color: #526477;">ID Negoci #${n.id}</span>
+        contenedor.innerHTML = negocios.map(n => {
+          const h = parsearHorarioGuardado(n.horario);
+          return `
+            <div class="negocio-item">
+              <div class="negocio-item-top">
+                <div>
+                  <h3 style="margin: 0; color: #183153;">${n.nombre}</h3>
+                  <span style="font-size: 13px; color: #526477;">ID Negoci #${n.id}</span>
+                </div>
+                <span class="estado ${n.estado}">${n.estado}</span>
               </div>
-              <span class="estado ${n.estado}">${n.estado}</span>
+
+              <form onsubmit="guardarCanvisNegoci(event, ${usuarioId}, ${n.id})" style="box-shadow: none; padding: 0;">
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin-bottom: 10px;">
+                  <label style="flex-direction: row; align-items: center; gap: 10px; cursor: pointer; color: #183153;">
+                    <input type="checkbox" id="serv-${n.id}" ${n.servicios_activos ? "checked" : ""} style="width: 18px; height: 18px;" />
+                    Activar apartat de serveis, horari i recepció de reserves/consultes
+                  </label>
+
+                  <label style="flex-direction: row; align-items: center; gap: 10px; cursor: pointer; color: #0369a1; margin-top: 8px;">
+                    <input type="checkbox" id="auto-${n.id}" ${n.auto_aceptar ? "checked" : ""} style="width: 18px; height: 18px;" />
+                    🤖 Assistent automàtic: confirmar cites al moment si l'hora està lliure
+                  </label>
+
+                  <div class="selector-horario-box">
+                    <span style="font-size: 13px; font-weight: bold; color: #173661;">1. Selecciona els dies d'obertura:</span>
+                    <div class="dias-pills" id="dias-${n.id}">
+                      ${DIAS_SEMANA.map(d => `
+                        <button
+                          type="button"
+                          class="dia-pill ${h.dias.includes(d.id) ? "activo" : ""}"
+                          data-dia="${d.id}"
+                          onclick="toggleDia(this, ${n.id})"
+                        >${d.label}</button>
+                      `).join("")}
+                    </div>
+
+                    <span style="font-size: 13px; font-weight: bold; color: #173661;">2. Selecciona les franges horàries:</span>
+                    <div class="franjas-horario">
+                      <div class="franja-grupo">
+                        <span>☀️ Matí:</span>
+                        <input type="time" id="m1-${n.id}" value="${h.mInicio}" onchange="actualitzarPreviewHorario(${n.id})" />
+                        <span>a</span>
+                        <input type="time" id="m2-${n.id}" value="${h.mFin}" onchange="actualitzarPreviewHorario(${n.id})" />
+                      </div>
+
+                      <div class="franja-grupo" id="tarde-inputs-${n.id}" style="opacity: ${h.tieneTarde ? "1" : "0.4"};">
+                        <input
+                          type="checkbox"
+                          id="tarde-check-${n.id}"
+                          ${h.tieneTarde ? "checked" : ""}
+                          onchange="actualitzarPreviewHorario(${n.id})"
+                          title="Activar torn de tarda"
+                        />
+                        <span>🌙 Tarda:</span>
+                        <input type="time" id="t1-${n.id}" value="${h.tInicio}" ${h.tieneTarde ? "" : "disabled"} onchange="actualitzarPreviewHorario(${n.id})" />
+                        <span>a</span>
+                        <input type="time" id="t2-${n.id}" value="${h.tFin}" ${h.tieneTarde ? "" : "disabled"} onchange="actualitzarPreviewHorario(${n.id})" />
+                      </div>
+                    </div>
+
+                    <div class="preview-horario" id="preview-hor-${n.id}">
+                      🕒 Vista prèvia: ${n.horario || `${h.dias.join(", ")} · ${h.mInicio} - ${h.mFin}${h.tieneTarde ? ` i ${h.tInicio} - ${h.tFin}` : ""}`}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-grid-2">
+                  <label>
+                    Nom del negoci *
+                    <input type="text" id="nom-${n.id}" value="${n.nombre}" required />
+                  </label>
+
+                  <label>
+                    Categoria *
+                    <select id="cat-${n.id}" required>
+                      ${CATEGORIAS.map(c => `<option value="${c}" ${c === n.categoria ? "selected" : ""}>${c}</option>`).join("")}
+                    </select>
+                  </label>
+
+                  <label>
+                    Ubicació (Ciutat) *
+                    <input type="text" id="ubi-${n.id}" value="${n.ubicacion}" required />
+                  </label>
+
+                  <label>
+                    Telèfon de contacte
+                    <input type="text" id="tel-${n.id}" value="${n.telefono || ""}" />
+                  </label>
+
+                  <label>
+                    Correu del negoci
+                    <input type="email" id="cor-${n.id}" value="${n.correo || ""}" />
+                  </label>
+
+                  <label>
+                    Pàgina web
+                    <input type="text" id="web-${n.id}" value="${n.web || ""}" />
+                  </label>
+                </div>
+
+                <label>
+                  Descripció *
+                  <textarea id="desc-${n.id}" rows="3" required>${n.descripcion}</textarea>
+                </label>
+
+                <button type="submit">Desar canvis</button>
+              </form>
             </div>
-
-            <form onsubmit="guardarCanvisNegoci(event, ${usuarioId}, ${n.id})" style="box-shadow: none; padding: 0;">
-              <div class="form-grid-2">
-                <label>
-                  Nom del negoci *
-                  <input type="text" id="nom-${n.id}" value="${n.nombre}" required />
-                </label>
-
-                <label>
-                  Categoria *
-                  <select id="cat-${n.id}" required>
-                    ${CATEGORIAS.map(c => `<option value="${c}" ${c === n.categoria ? "selected" : ""}>${c}</option>`).join("")}
-                  </select>
-                </label>
-
-                <label>
-                  Ubicació (Ciutat) *
-                  <input type="text" id="ubi-${n.id}" value="${n.ubicacion}" required />
-                </label>
-
-                <label>
-                  Telèfon de contacte
-                  <input type="text" id="tel-${n.id}" value="${n.telefono || ""}" />
-                </label>
-
-                <label>
-                  Correu del negoci
-                  <input type="email" id="cor-${n.id}" value="${n.correo || ""}" />
-                </label>
-
-                <label>
-                  Pàgina web
-                  <input type="text" id="web-${n.id}" value="${n.web || ""}" />
-                </label>
-              </div>
-
-              <label>
-                Descripció *
-                <textarea id="desc-${n.id}" rows="3" required>${n.descripcion}</textarea>
-              </label>
-
-              <button type="submit">Desar canvis</button>
-            </form>
-          </div>
-        `).join("");
+          `;
+        }).join("");
       } catch (err) {
         console.error(err);
         contenedor.innerHTML = "<p>Error al carregar els teus negocis.</p>";
@@ -275,6 +490,9 @@
     async function guardarCanvisNegoci(event, usuarioId, negocioId) {
       event.preventDefault();
       const payload = {
+        servicios_activos: document.getElementById(`serv-${negocioId}`).checked,
+        auto_aceptar: document.getElementById(`auto-${negocioId}`).checked,
+        horario: generarTextoHorario(negocioId),
         nombre: document.getElementById(`nom-${negocioId}`).value.trim(),
         categoria: document.getElementById(`cat-${negocioId}`).value,
         ubicacion: document.getElementById(`ubi-${negocioId}`).value.trim(),
@@ -293,7 +511,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "No s'han pogut desar els canvis");
 
-        mostrarAlerta(`Dades de "${data.nombre}" actualitzades correctament!`, "exito");
+        mostrarAlerta(`Dades i horari de "${data.nombre}" actualitzats correctament!`, "exito");
         carregarElsMeusNegocis(usuarioId);
       } catch (err) {
         mostrarAlerta(err.message, "error");
