@@ -141,7 +141,7 @@
         if (!respuesta.ok) throw new Error("No s'ha pogut registrar el negoci");
 
         const creado = await respuesta.json();
-        cajaMensaje.innerHTML = `Sol·licitud enviada! <strong>"${creado.nombre}"</strong> s'ha desat amb ID #${creado.id} i està pendent d'aprovació.` +
+        cajaMensaje.innerHTML = `Sol·licitud enviada! <strong>"${creado.nombre}"</strong>  està pendent d'aprovació.` +
           (usuario ? ` <a href="el-meu-negoci.html" style="color: #166534; text-decoration: underline; margin-left: 6px;">Gestionar al meu espai →</a>` : "");
         cajaMensaje.className = "alerta exito";
         cajaMensaje.style.display = "block";
